@@ -116,3 +116,29 @@ test('unknown top-level keys are dropped', () => {
   const s = deserialize(asJson);
   assert.ok(!('hacked' in s));
 });
+
+test('saveGame refuses a NaN money and keeps the previous save', () => {
+  const st = memoryStorage();
+  const good = createInitialState();
+  good.money = 7;
+  assert.equal(saveGame(st, good), true);
+  const before = st.data.racingGame;
+  const bad = createInitialState();
+  bad.money = NaN;
+  assert.equal(saveGame(st, bad), false);
+  assert.equal(st.data.racingGame, before);
+});
+
+test('deserialize restores default cars when none are valid', () => {
+  const raw = createInitialState();
+  raw.cars = [];
+  const s = deserialize(JSON.stringify(raw));
+  assert.equal(s.cars.length, 2);
+  assert.deepEqual(s.cars.map(c => c.distance), [0, 2]);
+});
+
+test('deserialize rejects circuits above MAX_SEGMENTS', () => {
+  const raw = createInitialState();
+  raw.segments = Array.from({ length: 49 }, () => ({ type: 'straight' }));
+  assert.equal(deserialize(JSON.stringify(raw)), null);
+});

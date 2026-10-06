@@ -44,7 +44,7 @@ test('curves slow cars', () => {
   s.segments = [{ type: 'curve_left' }, { type: 'checkpoint' }];
   s.cars = [{ distance: 0, lane: 0 }];
   stepCars(s, 0.1);
-  assert.ok(Math.abs(s.cars[0].distance - 0.07) < 1e-9);
+  assert.ok(Math.abs(s.cars[0].distance - 0.035) < 1e-9);
 });
 
 test('distance wraps at lap end', () => {
@@ -52,4 +52,35 @@ test('distance wraps at lap end', () => {
   s.cars = [{ distance: 3.95, lane: 0 }];
   stepCars(s, 0.1);
   assert.ok(Math.abs(s.cars[0].distance - 0.05) < 1e-9);
+});
+
+function earnings(segmentTypes) {
+  const s = createInitialState();
+  s.segments = segmentTypes.map(type => ({ type }));
+  s.cars = createInitialState().cars;
+  for (let i = 0; i < 1200; i++) stepCars(s, 0.05);
+  return s.money;
+}
+
+test('adding a checkpoint raises income', () => {
+  const base = earnings(['straight', 'checkpoint', 'straight', 'checkpoint']);
+  const more = earnings([
+    'straight', 'checkpoint', 'straight', 'checkpoint', 'straight', 'checkpoint',
+  ]);
+  assert.ok(more > base);
+});
+
+test('a straight alone does not lower income', () => {
+  const base = earnings(['straight', 'checkpoint', 'straight', 'checkpoint']);
+  const more = earnings(['straight', 'checkpoint', 'straight', 'checkpoint', 'straight']);
+  assert.ok(more >= base - 10);
+});
+
+test('stepCars ignores NaN and negative dt', () => {
+  for (const dt of [NaN, -1]) {
+    const s = createInitialState();
+    assert.equal(stepCars(s, dt), 0);
+    assert.deepEqual(s.cars, createInitialState().cars);
+    assert.equal(s.money, 0);
+  }
 });

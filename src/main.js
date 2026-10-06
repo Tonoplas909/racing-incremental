@@ -48,10 +48,14 @@ const ui = createUI(document.getElementById('panel'), {
     if (buySegment(state, type)) {
       rebuildPath();
       save();
+      ui.update(state, rateMeter.rate());
     }
   },
   onBuyUpgrade(kind) {
-    if (buyUpgrade(state, kind)) save();
+    if (buyUpgrade(state, kind)) {
+      save();
+      ui.update(state, rateMeter.rate());
+    }
   },
 });
 

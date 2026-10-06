@@ -1,4 +1,4 @@
-import { SAVE_KEY, SEGMENT_TYPES } from './config.js';
+import { SAVE_KEY, SEGMENT_TYPES, MAX_SEGMENTS } from './config.js';
 import { createInitialState } from './economy.js';
 
 export function serialize(state) {
@@ -32,6 +32,7 @@ export function deserialize(text) {
   if (
     !Array.isArray(parsed.segments) ||
     parsed.segments.length === 0 ||
+    parsed.segments.length > MAX_SEGMENTS ||
     !parsed.segments.every(seg => typeof seg === 'object' && seg !== null && SEGMENT_TYPES.includes(seg.type))
   ) {
     return null;
@@ -84,10 +85,17 @@ export function deserialize(text) {
     }
   }
 
+  if (result.cars.length === 0) {
+    result.cars = defaults.cars;
+  }
+
   return result;
 }
 
 export function saveGame(storage, state) {
+  if (!Number.isFinite(state.money)) {
+    return false;
+  }
   try {
     storage.setItem(SAVE_KEY, serialize(state));
     return true;

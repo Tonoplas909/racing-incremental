@@ -1,4 +1,4 @@
-import { MAX_DT, SEGMENT_SPEED_MULT } from './config.js';
+import { MAX_DT, SEGMENT_SPEED_MULT, START } from './config.js';
 import { segmentIndexAt, checkpointPositions } from './track.js';
 import { carSpeed, checkpointPayout } from './economy.js';
 
@@ -11,12 +11,15 @@ export function countCrossings(positions, from, to, total) {
 }
 
 export function stepCars(state, dt) {
+  if (!(dt > 0)) return 0;
   dt = Math.min(dt, MAX_DT);
 
   const speed = carSpeed(state);
   const payout = checkpointPayout(state);
   const checkpoints = checkpointPositions(state.segments);
   const trackLength = state.segments.length;
+  // Keep the lap time constant: cars cover more track units per second on a longer circuit.
+  const lengthFactor = trackLength / START.segments.length;
 
   let totalEarned = 0;
 
@@ -26,7 +29,7 @@ export function stepCars(state, dt) {
     const speedMult = SEGMENT_SPEED_MULT[segmentType];
 
     const oldDistance = car.distance;
-    const newDistance = oldDistance + speed * speedMult * dt;
+    const newDistance = oldDistance + speed * speedMult * lengthFactor * dt;
 
     const hits = countCrossings(checkpoints, oldDistance, newDistance, trackLength);
     totalEarned += hits * payout;

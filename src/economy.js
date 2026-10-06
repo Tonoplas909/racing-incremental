@@ -1,4 +1,4 @@
-import { START, UPGRADE_EFFECT, SEGMENT_BASE_COST, SEGMENT_COST_GROWTH } from './config.js';
+import { START, UPGRADE_BASE_COST, UPGRADE_EFFECT, SEGMENT_BASE_COST, SEGMENT_COST_GROWTH } from './config.js';
 import { canAddSegment } from './track.js';
 
 export function laneFor(index) {
@@ -18,7 +18,7 @@ export function createInitialState() {
 
   return {
     version: 1,
-    money: 0,
+    money: START.money,
     segments,
     cars,
     levels: { speed: 0, payout: 0 },
@@ -37,13 +37,13 @@ export function checkpointPayout(state) {
 
 export function upgradeCost(state, kind) {
   if (kind === 'car') {
-    return 100 * (state.cars.length + 1);
+    return UPGRADE_BASE_COST.car * (state.cars.length + 1);
   }
   if (kind === 'speed') {
-    return 50 * (state.levels.speed + 1);
+    return UPGRADE_BASE_COST.speed * (state.levels.speed + 1);
   }
   if (kind === 'payout') {
-    return 75 * (state.levels.payout + 1);
+    return UPGRADE_BASE_COST.payout * (state.levels.payout + 1);
   }
 }
 

@@ -43,16 +43,21 @@ function buildButton(parent, label, onClick) {
   button.type = 'button';
   const name = el('span', 'buy-label', label);
   const cost = el('span', 'buy-cost', '');
-  button.append(name, cost);
+  const reason = el('span', 'buy-reason', '');
+  const top = el('span', 'buy-top');
+  top.append(name, cost);
+  button.append(top, reason);
   button.addEventListener('click', onClick);
   parent.append(button);
-  return { button, cost };
+  return { button, cost, reason };
 }
 
 function setButton(entry, cost, reason) {
   entry.cost.textContent = `${formatMoney(cost)} $`;
   entry.button.disabled = reason !== null;
-  entry.button.title = reason === null ? '' : REASONS[reason];
+  const text = reason === null ? '' : REASONS[reason];
+  entry.button.title = text;
+  entry.reason.textContent = text;
 }
 
 export function createUI(panel, { onBuySegment, onBuyUpgrade }) {

@@ -105,3 +105,23 @@ main {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.buy {
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.buy-top {
+  display: flex;
+  justify-content: space-between;
+}
+
+.buy-reason {
+  font-size: 0.72rem;
+  color: #9aa0b0;
+}
+
+.buy-reason:empty {
+  display: none;
+}
