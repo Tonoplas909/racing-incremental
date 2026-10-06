@@ -41,15 +41,32 @@ export function deserialize(text) {
   const defaults = createInitialState();
   const trackLength = parsed.segments.length;
 
+  // Helper to validate and merge numeric object fields
+  const mergeNumericFields = (defaultObj, parsedObj) => {
+    const result = {};
+    for (const key in defaultObj) {
+      const parsedValue = parsedObj?.[key];
+      if (Number.isFinite(parsedValue) && parsedValue >= 0) {
+        result[key] = parsedValue;
+      } else {
+        result[key] = defaultObj[key];
+      }
+    }
+    return result;
+  };
+
+  // Normalize segments to only include type field
+  const normalizedSegments = parsed.segments.map(s => ({ type: s.type }));
+
   // Build the result state with exact keys from defaults
   const result = {
     version: parsed.version,
     money: parsed.money,
-    segments: parsed.segments,
+    segments: normalizedSegments,
     cars: [],
-    levels: { ...defaults.levels, ...(parsed.levels || {}) },
-    bought: { ...defaults.bought, ...(parsed.bought || {}) },
-    stats: { ...defaults.stats, ...(parsed.stats || {}) },
+    levels: mergeNumericFields(defaults.levels, parsed.levels),
+    bought: mergeNumericFields(defaults.bought, parsed.bought),
+    stats: mergeNumericFields(defaults.stats, parsed.stats),
   };
 
   // Process cars: drop those without finite distance, normalize distance, default lane

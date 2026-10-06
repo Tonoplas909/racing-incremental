@@ -82,3 +82,37 @@ test('saveGame/loadGame survive throwing storage', () => {
   assert.equal(saveGame(throwingStorage, createInitialState()), false);
   assert.deepEqual(loadGame(throwingStorage), createInitialState());
 });
+
+test('levels with invalid speed value are corrected', () => {
+  const raw = createInitialState();
+  raw.levels = { speed: 'x', payout: 2 };
+  const s = deserialize(JSON.stringify(raw));
+  assert.deepEqual(s.levels, { speed: 0, payout: 2 });
+});
+
+test('stats with null value are corrected', () => {
+  const raw = createInitialState();
+  raw.stats = { totalEarned: null, checkpointsHit: 5 };
+  const s = deserialize(JSON.stringify(raw));
+  assert.deepEqual(s.stats, { totalEarned: 0, checkpointsHit: 5 });
+});
+
+test('malformed levels and bought yield defaults', () => {
+  const defaults = createInitialState();
+  const raw1 = createInitialState();
+  raw1.levels = 'ab';
+  const s1 = deserialize(JSON.stringify(raw1));
+  assert.deepEqual(s1.levels, defaults.levels);
+
+  const raw2 = createInitialState();
+  raw2.bought = [1, 2];
+  const s2 = deserialize(JSON.stringify(raw2));
+  assert.deepEqual(s2.bought, defaults.bought);
+});
+
+test('unknown top-level keys are dropped', () => {
+  const raw = createInitialState();
+  const asJson = JSON.stringify({ ...raw, hacked: true });
+  const s = deserialize(asJson);
+  assert.ok(!('hacked' in s));
+});
