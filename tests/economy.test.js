@@ -1,13 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  BASE_CAR, NITRO, UPGRADES, UPGRADE_EFFECT, CAR_COSTS, MAX_CARS,
-  PRIZES, LAP_REWARD, OVERTAKE_REWARD, REPUTATION, TRACKS
-} from '../src/config.js';
+import { BASE_CAR } from '../src/config.js';
 import {
   createProfile, upgradeCost, carCost, buyUpgrade, buyCar,
   playerParams, nitroStats, rivalParams, lapReward, overtakeReward,
-  earn, unlockedCount, settleRace
+  unlockedCount, settleRace
 } from '../src/economy.js';
 
 test('costs', () => {
@@ -51,4 +48,7 @@ test('settleRace', () => {
   const q = createProfile(); q.reputation = 14;
   assert.deepEqual(settleRace(q, ['me1', 'r1', 'me2'], ['me1', 'me2'], 0), { prize: 180, reputation: 5, unlocked: 1 });
   assert.equal(q.trackIndex, 1); assert.equal(q.stats.wins, 1); assert.equal(unlockedCount(q), 2);
+  const r = createProfile();
+  assert.deepEqual(settleRace(r, ['r1', 'me1'], ['me1'], 1), { prize: 200, reputation: 3, unlocked: null });
+  assert.equal(r.money, 200);
 });

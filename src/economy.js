@@ -103,11 +103,13 @@ export function settleRace(profile, carIds, ownIds, trackIndex) {
 
   ownIds.forEach(ownId => {
     const position = carIds.indexOf(ownId) + 1; // 1-indexed
-    if (position > 0 && position <= PRIZES.length) {
-      prize += PRIZES[position - 1];
-    }
-    if (position < bestOwnPosition) {
-      bestOwnPosition = position;
+    if (position > 0) {
+      if (position <= PRIZES.length) {
+        prize += PRIZES[position - 1] * reward;
+      }
+      if (position < bestOwnPosition) {
+        bestOwnPosition = position;
+      }
     }
   });
 
