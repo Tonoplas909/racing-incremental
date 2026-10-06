@@ -51,6 +51,34 @@ test('sanitizes fields', () => {
   assert.equal('hacked' in p, false);
 });
 
+test('round trip keeps a fractional earned', () => {
+  const p = createProfile();
+  p.stats.earned = 12.5;
+  p.stats.races = 3;
+  const deserialized = deserialize(JSON.stringify(p));
+  assert.deepEqual(deserialized.stats, { races: 3, wins: 0, earned: 12.5 });
+});
+
+test('levels { engine: 101, tires: 100 }', () => {
+  const p = createProfile();
+  p.levels.engine = 101;
+  p.levels.tires = 100;
+  const raw = { ...p };
+  const deserialized = deserialize(JSON.stringify(raw));
+  assert.equal(deserialized.levels.engine, 0);
+  assert.equal(deserialized.levels.tires, 100);
+});
+
+test('a valid trackIndex survives', () => {
+  const p = createProfile();
+  p.reputation = 20;
+  p.trackIndex = 1;
+  p.cars = 3;
+  const deserialized = deserialize(JSON.stringify(p));
+  assert.equal(deserialized.trackIndex, 1);
+  assert.equal(deserialized.cars, 3);
+});
+
 test('storage wrappers', () => {
   const st = memoryStorage();
   const p = createProfile();

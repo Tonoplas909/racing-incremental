@@ -34,20 +34,30 @@ export function deserialize(text) {
   // Rebuild from createProfile() keys
   const profile = createProfile();
 
-  // Sanitize levels: take parsed value if finite integer >= 0, else default
+  // Assign money and reputation once (before unlockedCount)
+  profile.money = data.money;
+  profile.reputation = data.reputation;
+
+  // Sanitize levels: take parsed value if integer in [0, 100], else default
   for (const key of Object.keys(profile.levels)) {
     const value = data.levels?.[key];
-    if (Number.isInteger(value) && value >= 0) {
+    if (Number.isInteger(value) && value >= 0 && value <= 100) {
       profile.levels[key] = value;
     }
   }
 
-  // Sanitize stats: take parsed value if finite integer >= 0, else default
-  for (const key of Object.keys(profile.stats)) {
-    const value = data.stats?.[key];
-    if (Number.isInteger(value) && value >= 0) {
-      profile.stats[key] = value;
-    }
+  // Sanitize stats: races and wins are integers >= 0, earned is any finite number >= 0
+  const racesValue = data.stats?.races;
+  if (Number.isInteger(racesValue) && racesValue >= 0) {
+    profile.stats.races = racesValue;
+  }
+  const winsValue = data.stats?.wins;
+  if (Number.isInteger(winsValue) && winsValue >= 0) {
+    profile.stats.wins = winsValue;
+  }
+  const earnedValue = data.stats?.earned;
+  if (Number.isFinite(earnedValue) && earnedValue >= 0) {
+    profile.stats.earned = earnedValue;
   }
 
   // Sanitize cars: integer in [1, MAX_CARS], else 1
@@ -56,18 +66,10 @@ export function deserialize(text) {
   }
 
   // Sanitize trackIndex: integer in [0, unlockedCount - 1], else 0
-  // First set reputation to the parsed value
-  if (Number.isFinite(data.reputation) && data.reputation >= 0) {
-    profile.reputation = data.reputation;
-  }
   const unlocked = unlockedCount(profile);
   if (Number.isInteger(data.trackIndex) && data.trackIndex >= 0 && data.trackIndex < unlocked) {
     profile.trackIndex = data.trackIndex;
   }
-
-  // Copy over money and reputation
-  profile.money = data.money;
-  profile.reputation = data.reputation;
 
   return profile;
 }
