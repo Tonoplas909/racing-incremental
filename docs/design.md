@@ -1,223 +1,60 @@
-# Racing Incremental Game - Design Specification
+# Pit Wall — spécification
 
-**Date:** 2026-10-06  
-**Project:** Racing Incremental Sim on GitHub Pages  
-**Scope:** Single-file web game with local progression, no backend
+**Date :** 2026-10-06
+**Thème imposé :** jeu incrémental de course, vue de dessus, en 2D. Tout le reste est choisi par Claude.
+**Contraintes :** site statique sur GitHub Pages, aucune base de données, progression en local (localStorage), JavaScript sans dépendance ni build.
 
----
+## 1. Concept
 
-## 1. Overview
+Le joueur dirige une écurie de course. Ses voitures (1 au départ, jusqu'à 4) affrontent 5 écuries rivales pilotées par l'IA sur un circuit dessiné en vue de dessus. Les courses s'enchaînent automatiquement. Le joueur gagne de l'argent pendant et après chaque course, l'investit dans ses voitures, et gagne de la réputation qui débloque des circuits plus longs, plus techniques et plus rémunérateurs.
 
-A incremental/idle game where the player manages a racing circuit. Players don't control cars directly, but instead build and upgrade the circuit to earn money. Mechanics include adding track segments, managing multiple cars, and purchasing upgrades to increase earnings.
+Boucle :
+1. Départ arrêté (feux rouges puis vert), 3 tours.
+2. Pendant la course : argent à chaque tour bouclé et à chaque dépassement ; le joueur clique sur ses voitures pour déclencher un nitro (temps de recharge).
+3. Fin de course : prime selon la position de chaque voiture du joueur, réputation selon la meilleure position.
+4. Le joueur achète des améliorations ; la course suivante démarre seule.
 
-**Core Loop:**
-- Cars race continuously around the circuit
-- Player adds segments (turns, straights, checkpoints) via buttons
-- Cars pass checkpoints and earn money
-- Player spends money on upgrades (more cars, faster cars, higher payouts)
-- Progression is saved locally; game continues when revisited
+## 2. Circuits
 
----
+- 5 circuits, chacun défini par une liste de points de contrôle reliés par une spline fermée lisse ; largeur de piste 70 unités.
+- Débloqués par la réputation : 0, 15, 45, 110, 250.
+- Chaque circuit a un multiplicateur de récompense : ×1, ×2,5, ×6, ×15, ×40.
+- Les rivaux sont plus forts sur les circuits avancés : performance ×(0,92 + 0,1 × rang du circuit), modulée par un niveau propre à chaque écurie.
+- Le joueur choisit son circuit parmi ceux débloqués ; un nouveau circuit débloqué est sélectionné automatiquement pour la course suivante.
 
-## 2. Feature Scope
+## 3. Course et pilotage
 
-### Must-Have
-- Circuit as ordered list of segments (straights, left/right curves, checkpoints)
-- 2D canvas rendering with smooth geometric shapes (rounded forms, no pixel art)
-- Multiple cars racing continuously, progressing through the circuit
-- Money earned when cars pass checkpoints
-- Upgrades: add cars, increase car speed, increase checkpoint payout
-- Local storage auto-save (JSON in localStorage)
-- Add segment buttons that place new segments automatically without breaking the circuit
+- Chaque voiture a 4 caractéristiques : vitesse de pointe, accélération, freinage, adhérence.
+- Les voitures suivent la piste, calculent la vitesse maximale des virages à venir (adhérence / courbure) et freinent à temps : elles ralentissent avant les virages et réaccélèrent en sortie.
+- Trafic : une voiture ne traverse jamais celle de devant ; si elle est plus rapide, elle se décale pour la doubler.
+- Nitro : +40 % de vitesse de pointe et +60 % d'accélération pendant une courte durée, puis recharge.
+- Fin de course : chaque voiture termine au bout de 3 tours ; la course s'arrête quand toutes ont terminé ou 20 s après le vainqueur (les autres sont classées par distance parcourue).
 
-### Nice-to-Have (Phase 2+)
-- Stats display (money/sec, total cars, average speed)
-- Circuit quality upgrades (more efficient turns)
-- Visual polish (animations, feedback)
-- Reset button for new game
+## 4. Économie
 
-### Out of Scope
-- Offline progression (no background simulation when tab is closed)
-- Multiple circuits
-- Advanced graphics or animations
-- Leaderboards or multiplayer
+- Tour bouclé : 5 $ × multiplicateur du circuit, par voiture du joueur.
+- Dépassement : 3 $ × multiplicateur, uniquement quand la voiture atteint une place jamais atteinte depuis le départ (pas de farm en se faisant redoubler).
+- Prime de fin : 120, 80, 60, 40, 30, 20, 15, 10, 10 $ selon la position × multiplicateur.
+- Réputation : 5 / 3 / 2 / 1 pour une meilleure place de 1 / 2 / 3 / 4.
+- Améliorations (coût = base × croissance^niveau) :
+  - Moteur (50, ×1,6) : vitesse de pointe ×1,06 et accélération ×1,08 par niveau
+  - Pneus (50, ×1,6) : adhérence ×1,07 par niveau
+  - Freins (40, ×1,55) : freinage ×1,10 par niveau
+  - Nitro (80, ×1,7) : durée 1,5 s + 0,3 s par niveau, recharge 8 s × 0,93^niveau
+  - Nouvelle voiture : 300, 2 000, 12 000 $ (4 voitures max)
 
----
+## 5. Rendu
 
-## 3. Data Model
+- Herbe tondue en bandes, arbres décoratifs, piste asphalte bordée de lignes blanches, vibreurs rouge et blanc à l'intérieur des virages, ligne d'arrivée en damier, cases de la grille de départ.
+- Voitures dessinées : ombre, carrosserie aux couleurs de l'écurie, aileron, cockpit, roues ; les voitures du joueur ont un halo, leur position et une jauge de nitro.
+- Effets : traces de freinage qui s'estompent, flammes de nitro, gains flottants (« +15 $ »), feux de départ.
+- Panneau latéral : argent, réputation, circuit et tour en cours, classement en direct, améliorations, circuits. Interface en français.
 
-### Circuit
-```
-Circuit = [Segment, Segment, ...]
+## 6. Sauvegarde
 
-Segment = {
-  id: string,
-  type: "straight" | "curve_left" | "curve_right" | "checkpoint",
-  length: number (in pixels or normalized units),
-  checkpoint_payout: number (if type is checkpoint, else 0)
-}
-```
+- Seul le profil est sauvegardé (argent, réputation, niveaux, nombre de voitures, circuit choisi, statistiques) ; une course interrompue recommence au rechargement.
+- Clé localStorage `pitwall.v2` ; sauvegarde toutes les 5 s, après chaque achat et à la fermeture de la page ; une sauvegarde invalide ou un stockage indisponible donnent une partie neuve sans planter.
 
-### Cars
-```
-Car = {
-  id: string,
-  progress: number (0.0 to 1.0, position in circuit),
-  speed: number (units per frame, affects how fast progress advances),
-  earnings: number (total earned by this car, for stats)
-}
-```
+## 7. Hors périmètre (v1)
 
-### Game State
-```
-GameState = {
-  circuit: Circuit,
-  cars: [Car, ...],
-  totalMoney: number,
-  checkpointPayout: number (base payout per checkpoint),
-  carSpeed: number (current speed multiplier for new/all cars),
-  stats: {
-    moneyPerSecond: number,
-    totalCheckpointsHit: number,
-    totalMoneyEarned: number
-  }
-}
-```
-
----
-
-## 4. Rendering & Visuals
-
-### Canvas Setup
-- Single HTML5 canvas, 2D context
-- Circuit drawn as connected path with smooth curves
-- Cars rendered as small rounded rectangles or circles
-
-### Circuit Visual Layout
-- Segments positioned sequentially to form a closed loop
-- Straights: horizontal or angled lines
-- Curves: `quadraticCurveTo` or `bezierCurveTo` for smooth turns
-- Checkpoints: distinct visual marker (ring, colored zone, etc.)
-- All shapes use rounded corners/smooth transitions
-
-### Car Rendering
-- Position calculated based on `progress` and segment layout
-- Small geometric shapes (rounded rectangle ~10x15px or circle ~8px)
-- Different colors for visual distinction (optional)
-
-### UI Elements
-- Top bar: buttons to add segments
-  - "Add Straight"
-  - "Add Left Turn"
-  - "Add Right Turn"
-  - "Add Checkpoint"
-- Stats panel: display current money, cars count, money/sec
-- Upgrade panel: buttons and costs for upgrades
-
----
-
-## 5. Simulation
-
-### Car Movement
-- Each frame (requestAnimationFrame), update all cars:
-  ```
-  car.progress += (car.speed * deltaTime) % 1.0
-  ```
-- Progress wraps at 1.0 (car loops back to start)
-
-### Checkpoint Detection
-- Track previous progress and current progress for each car per frame
-- If car crosses a checkpoint segment boundary, add money:
-  ```
-  totalMoney += checkpointPayout
-  car.earnings += checkpointPayout
-  ```
-
-### Adding Segments
-- When player clicks "Add [Type]", insert new segment at the end of the circuit
-  - Segments are appended sequentially, forming a closed loop
-  - Visual layout adapts: circuit redistributes evenly on canvas to fit new length
-  - If circuit grows too large visually, scale down the zoom or redistribute segments (Phase 2 optimization)
-
----
-
-## 6. Upgrades & Economy
-
-### Upgrade Types
-| Upgrade | Cost Formula | Effect |
-|---------|--------------|--------|
-| New Car | `base_cost * (num_cars + 1)` | Add 1 car to the circuit |
-| Speed Boost | `base_cost * speedLevel` | Increase all car speeds by 10% |
-| Checkpoint Payout | `base_cost * payoutLevel` | Increase checkpoint earnings by 10% |
-
-### Initial Values (TBD after testing)
-- `base_cost` for car: 100
-- `base_cost` for speed: 50
-- `base_cost` for payout: 75
-- Starting money: 0
-- Starting cars: 2
-- Starting speed: 1.0
-- Starting checkpoint payout: 10
-
----
-
-## 7. Persistence
-
-### Auto-Save
-- Save full `GameState` to `localStorage.racingGame` every 5 seconds or on upgrade purchase
-- Format: JSON string
-
-### Load on Startup
-- Check `localStorage.racingGame`
-- If exists, parse and restore state
-- If not, create default state (circuit with 2 straights and 2 checkpoints, 2 cars)
-
-### Clear/Reset (Phase 2)
-- Optional button to clear localStorage and restart
-
----
-
-## 8. User Interface Flow
-
-1. **Startup**: Load from localStorage or create default circuit
-2. **Main Loop**: 
-   - Render circuit and cars
-   - Update car positions
-   - Detect checkpoint hits
-   - Update money display
-3. **Player Action**: Click segment button → circuit updates → UI refreshes
-4. **Upgrade**: Click upgrade button → deduct money → apply effect → save state
-
----
-
-## 9. Technical Stack
-
-- **Language**: JavaScript (vanilla, no frameworks initially)
-- **Rendering**: HTML5 Canvas 2D
-- **Storage**: localStorage
-- **Deployment**: GitHub Pages (static files)
-- **File Structure**: Single HTML file + CSS inline + JS inline (or separate .js for clarity)
-
----
-
-## 10. Testing Strategy
-
-- Manual testing of:
-  - Car movement and checkpoint detection
-  - Money calculation and display
-  - Upgrade costs and effects
-  - Save/load cycle
-  - Adding segments without visual overlap
-- No unit tests initially (Phase 2+)
-
----
-
-## 11. Acceptance Criteria
-
-- [ ] Game runs locally without errors
-- [ ] Cars move smoothly and loop the circuit
-- [ ] Checkpoints award money correctly
-- [ ] Upgrades apply and costs deduct money
-- [ ] Game state persists via localStorage
-- [ ] New segments can be added without breaking the circuit
-- [ ] UI is responsive and clear (mobile-friendly not required v1)
+Progression hors ligne, prestige, sons, multijoueur, classements en ligne.
