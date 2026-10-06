@@ -15,14 +15,16 @@ export function checkpointPositions(segments) {
 }
 
 export function canAddSegment(segments, type) {
-  // Check max_segments first (as per brief)
   if (segments.length >= MAX_SEGMENTS) {
     return { ok: false, reason: 'max_segments' };
   }
 
-  // Check need_track: if adding a checkpoint, last segment must not be checkpoint
-  if (type === 'checkpoint' && segments.length > 0 && segments[segments.length - 1].type === 'checkpoint') {
-    return { ok: false, reason: 'need_track' };
+  if (type === 'checkpoint') {
+    const checkpointCount = segments.filter(seg => seg.type === 'checkpoint').length;
+    const nonCheckpointCount = segments.length - checkpointCount;
+    if (checkpointCount + 1 > nonCheckpointCount) {
+      return { ok: false, reason: 'need_track' };
+    }
   }
 
   return { ok: true };

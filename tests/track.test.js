@@ -21,6 +21,11 @@ test('checkpoint needs a track segment per checkpoint', () => {
   assert.deepEqual(canAddSegment(DEFAULT, 'curve_left'), { ok: true });
 });
 
+test('checkpointCount <= nonCheckpointCount rule', () => {
+  assert.deepEqual(canAddSegment(seg('straight','straight','straight','checkpoint','checkpoint'), 'checkpoint'), { ok: true });
+  assert.deepEqual(canAddSegment(seg('straight','checkpoint','checkpoint','straight'), 'checkpoint'), { ok: false, reason: 'need_track' });
+});
+
 test('circuit is capped at 48 segments', () => {
   const full = Array.from({ length: 48 }, () => ({ type: 'straight' }));
   assert.deepEqual(canAddSegment(full, 'straight'), { ok: false, reason: 'max_segments' });
