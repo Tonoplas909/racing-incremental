@@ -1,0 +1,8 @@
+{
+  "name": "racing-incremental",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

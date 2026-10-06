@@ -12,7 +12,17 @@ Jeu incrémental de course en vue de dessus, dans le navigateur. On ne pilote pa
 
 ## Jouer
 
-Ouvrir `index.html` dans un navigateur. Le jeu sera aussi publié sur GitHub Pages.
+En local, il faut un petit serveur : les modules ES ne se chargent pas depuis `file://`.
+
+```
+python -m http.server 8000
+```
+
+Puis ouvrir `http://localhost:8000`.
+
+Les tests se lancent avec `npm test` (Node 20 ou plus).
+
+Version en ligne : https://tonoplas909.github.io/racing-incremental/ (une fois GitHub Pages activé sur `main` / racine).
 
 ## Stack
 

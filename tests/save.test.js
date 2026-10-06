@@ -1,0 +1,144 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { serialize, deserialize, saveGame, loadGame } from '../src/save.js';
+import { createInitialState } from '../src/economy.js';
+
+const memoryStorage = () => ({
+  data: {},
+  getItem(k) {
+    return this.data[k] ?? null;
+  },
+  setItem(k, v) {
+    this.data[k] = v;
+  },
+});
+
+const throwingStorage = {
+  getItem() {
+    throw new Error('denied');
+  },
+  setItem() {
+    throw new Error('quota');
+  },
+};
+
+test('round trip', () => {
+  const s = createInitialState();
+  s.money = 123;
+  assert.deepEqual(deserialize(serialize(s)), s);
+});
+
+test('deserialize rejects bad JSON', () =>
+  assert.equal(deserialize('{bad'), null));
+
+test('deserialize rejects other versions', () => {
+  assert.equal(
+    deserialize(
+      JSON.stringify({ ...createInitialState(), version: 2 })
+    ),
+    null
+  );
+});
+
+test('deserialize rejects unknown segment types', () => {
+  assert.equal(
+    deserialize(
+      JSON.stringify({ ...createInitialState(), segments: [{ type: 'banana' }] })
+    ),
+    null
+  );
+});
+
+test('deserialize rejects negative money', () => {
+  assert.equal(
+    deserialize(JSON.stringify({ ...createInitialState(), money: -5 })),
+    null
+  );
+});
+
+test('deserialize fills missing fields and normalizes distance', () => {
+  const raw = createInitialState();
+  delete raw.stats;
+  raw.cars = [{ distance: 9 }, { distance: 'x' }];
+  const s = deserialize(JSON.stringify(raw));
+  assert.deepEqual(s.stats, { totalEarned: 0, checkpointsHit: 0 });
+  assert.deepEqual(s.cars, [{ distance: 1, lane: 0 }]);
+});
+
+test('saveGame/loadGame use the racingGame key', () => {
+  const st = memoryStorage();
+  const s = createInitialState();
+  s.money = 42;
+  assert.equal(saveGame(st, s), true);
+  assert.ok('racingGame' in st.data);
+  assert.equal(loadGame(st).money, 42);
+});
+
+test('loadGame on empty storage gives a fresh game', () => {
+  assert.deepEqual(loadGame(memoryStorage()), createInitialState());
+});
+
+test('saveGame/loadGame survive throwing storage', () => {
+  assert.equal(saveGame(throwingStorage, createInitialState()), false);
+  assert.deepEqual(loadGame(throwingStorage), createInitialState());
+});
+
+test('levels with invalid speed value are corrected', () => {
+  const raw = createInitialState();
+  raw.levels = { speed: 'x', payout: 2 };
+  const s = deserialize(JSON.stringify(raw));
+  assert.deepEqual(s.levels, { speed: 0, payout: 2 });
+});
+
+test('stats with null value are corrected', () => {
+  const raw = createInitialState();
+  raw.stats = { totalEarned: null, checkpointsHit: 5 };
+  const s = deserialize(JSON.stringify(raw));
+  assert.deepEqual(s.stats, { totalEarned: 0, checkpointsHit: 5 });
+});
+
+test('malformed levels and bought yield defaults', () => {
+  const defaults = createInitialState();
+  const raw1 = createInitialState();
+  raw1.levels = 'ab';
+  const s1 = deserialize(JSON.stringify(raw1));
+  assert.deepEqual(s1.levels, defaults.levels);
+
+  const raw2 = createInitialState();
+  raw2.bought = [1, 2];
+  const s2 = deserialize(JSON.stringify(raw2));
+  assert.deepEqual(s2.bought, defaults.bought);
+});
+
+test('unknown top-level keys are dropped', () => {
+  const raw = createInitialState();
+  const asJson = JSON.stringify({ ...raw, hacked: true });
+  const s = deserialize(asJson);
+  assert.ok(!('hacked' in s));
+});
+
+test('saveGame refuses a NaN money and keeps the previous save', () => {
+  const st = memoryStorage();
+  const good = createInitialState();
+  good.money = 7;
+  assert.equal(saveGame(st, good), true);
+  const before = st.data.racingGame;
+  const bad = createInitialState();
+  bad.money = NaN;
+  assert.equal(saveGame(st, bad), false);
+  assert.equal(st.data.racingGame, before);
+});
+
+test('deserialize restores default cars when none are valid', () => {
+  const raw = createInitialState();
+  raw.cars = [];
+  const s = deserialize(JSON.stringify(raw));
+  assert.equal(s.cars.length, 2);
+  assert.deepEqual(s.cars.map(c => c.distance), [0, 2]);
+});
+
+test('deserialize rejects circuits above MAX_SEGMENTS', () => {
+  const raw = createInitialState();
+  raw.segments = Array.from({ length: 49 }, () => ({ type: 'straight' }));
+  assert.equal(deserialize(JSON.stringify(raw)), null);
+});
