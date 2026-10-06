@@ -1,6 +1,5 @@
 // Canvas renderer: reads state and path, draws the frame. No game rules here.
 import { pointAt } from './geometry.js';
-import { checkpointPositions } from './track.js';
 
 export const TRACK_INSET = 20;
 
@@ -84,7 +83,7 @@ export function createRenderer(canvas) {
     ctx.translate(TRACK_INSET, TRACK_INSET);
     strokeTrack(ctx, path.samples);
     drawBand(ctx, path, 0, '#ffffff', 4);
-    for (const position of checkpointPositions(state.segments)) {
+    for (const position of path.checkpoints) {
       drawBand(ctx, path, position, ACCENT, 6);
     }
     state.cars.forEach((car, index) => drawCar(ctx, path, car, index));

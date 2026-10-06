@@ -63,3 +63,45 @@ main {
     flex: none;
   }
 }
+
+#panel h2 {
+  margin: 16px 0 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.stat-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.buy {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 10px 12px;
+  border: 1px solid #3a3f4d;
+  border-radius: 8px;
+  background: #262a35;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.buy:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.buy:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
