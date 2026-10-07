@@ -5,6 +5,7 @@ const LATERAL_SPEED = 45;
 const LOOK_AHEAD_GAP = 60;
 const CLEAR_GAP = 80;
 const SLIPSTREAM_MARGIN = 5;
+const PASS_OFFSET = CAR_WIDTH + 5;
 
 // Scratch buffer reused by stepRace to order cars without allocating each step.
 const scratch = [];
@@ -114,7 +115,12 @@ export function stepRace(race, dt) {
 
     if (ahead) {
       if (aheadGap < CAR_LENGTH + 8) target = Math.min(target, ahead.v);
-      if (free > ahead.v + SLIPSTREAM_MARGIN) car.latTarget = (ahead.lateral > 0 ? -0.55 : 0.55) * half;
+      if (free > ahead.v + SLIPSTREAM_MARGIN) {
+        // Pass on the side the follower is already on, clear of the "ahead" lateral window.
+        let side = car.lateral <= ahead.lateral ? -1 : 1;
+        if (Math.abs(ahead.lateral + side * PASS_OFFSET) > maxLat) side = -side;
+        car.latTarget = Math.max(-maxLat, Math.min(maxLat, ahead.lateral + side * PASS_OFFSET));
+      }
     } else if (!anyClose) {
       car.latTarget = 0;
     }
@@ -139,7 +145,7 @@ export function stepRace(race, dt) {
       let blocked = false;
       for (const other of cars) {
         if (other === car) continue;
-        if (Math.abs(trackGap(car, other, L)) >= CAR_LENGTH + 4) continue;
+        if (Math.abs(trackGap(car, other, L)) >= CAR_LENGTH + 1) continue;
         const before = Math.abs(other.lateral - car.lateral);
         const after = Math.abs(other.lateral - newLat);
         if (after < before && after < CAR_WIDTH + 2) { blocked = true; break; }
