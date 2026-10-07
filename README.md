@@ -1,18 +1,19 @@
-# Racing Incremental
+# Pit Wall
 
-Jeu incrémental de course en vue de dessus, dans le navigateur. On ne pilote pas les voitures : on agrandit le circuit (lignes droites, virages, checkpoints) et on achète des améliorations pour gagner plus d'argent.
+Jeu incrémental de course en vue de dessus, dans le navigateur. Tu diriges une écurie : tes voitures roulent seules contre cinq écuries rivales, et tu investis l'argent gagné pour devenir plus rapide, agrandir l'écurie et débloquer de nouveaux circuits.
 
-## Fonctionnalités
+## Comment jouer
 
-- Plusieurs voitures qui tournent en continu sur le circuit
-- Ajout de segments au circuit pendant la course
-- Argent gagné à chaque passage de checkpoint
-- Améliorations : nombre de voitures, vitesse, gain par checkpoint
-- Progression sauvegardée en local dans le navigateur (localStorage), aucun serveur
+- Les courses s'enchaînent automatiquement : départ au feu, 3 tours, puis nouvelle course.
+- Tu gagnes de l'argent à chaque tour, à chaque dépassement et selon ta place à l'arrivée.
+- Clique sur tes voitures pour déclencher le nitro (recharge entre deux utilisations).
+- Améliorations : moteur, pneus, freins et nitro, plus jusqu'à 4 voitures dans l'écurie.
+- Les bonnes places rapportent de la réputation, qui débloque 5 circuits de plus en plus lucratifs.
+- Ta progression est sauvegardée dans le navigateur (localStorage), aucun serveur.
 
-## Jouer
+## Lancer en local
 
-En local, il faut un petit serveur : les modules ES ne se chargent pas depuis `file://`.
+Il faut un petit serveur : les modules ES ne se chargent pas depuis `file://`.
 
 ```
 python -m http.server 8000
@@ -20,14 +21,21 @@ python -m http.server 8000
 
 Puis ouvrir `http://localhost:8000`.
 
-Les tests se lancent avec `npm test` (Node 20 ou plus).
+## Tests
 
-Version en ligne : https://tonoplas909.github.io/racing-incremental/ (une fois GitHub Pages activé sur `main` / racine).
+```
+npm test
+```
+
+Node 20 ou plus. Aucune dépendance, aucune étape de build.
+
+## En ligne
+
+https://tonoplas909.github.io/racing-incremental/
 
 ## Stack
 
-- JavaScript vanilla, Canvas 2D, localStorage
-- Aucune étape de build
+- JavaScript vanilla (modules ES), Canvas 2D, localStorage
 
 ## Design
 
