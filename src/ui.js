@@ -5,6 +5,7 @@ import { upgradeCost, carCost } from './economy.js';
 const UPGRADE_LABELS = { engine: 'Moteur', tires: 'Pneus', brakes: 'Freins', nitro: 'Nitro' };
 const MAX_ROWS = MAX_CARS + RIVALS.length;
 const NO_MONEY = "Pas assez d'argent";
+const TEAM_FULL = 'Écurie complète';
 
 const RIVAL_BY_ID = new Map(RIVALS.map(r => [r.id, r]));
 
@@ -17,6 +18,25 @@ function el(tag, className, text) {
 
 function setText(node, text) {
   if (node.textContent !== text) node.textContent = text;
+}
+
+// Purchase button: the cost is always visible, the reason (if disabled) sits below it.
+function createBuyButton(onClick) {
+  const btn = el('button', 'buy');
+  btn.type = 'button';
+  const cost = el('span', 'cost');
+  const why = el('small', 'why');
+  btn.append(cost, why);
+  btn.addEventListener('click', onClick);
+  return { btn, cost, why };
+}
+
+function setBuy(buy, costText, enabled, reason) {
+  setText(buy.cost, costText);
+  setText(buy.why, enabled ? '' : reason);
+  buy.why.hidden = enabled;
+  buy.btn.disabled = !enabled;
+  buy.btn.classList.toggle('ok', enabled);
 }
 
 export function createUI(root, handlers) {
@@ -57,19 +77,15 @@ export function createUI(root, handlers) {
     const label = el('span', 'label', UPGRADE_LABELS[key]);
     const level = el('small');
     label.append(level);
-    const btn = el('button', 'buy');
-    btn.type = 'button';
-    btn.addEventListener('click', () => handlers.onUpgrade(key));
-    row.append(label, btn);
+    const buy = createBuyButton(() => handlers.onUpgrade(key));
+    row.append(label, buy.btn);
     upBox.append(row);
-    upRows[key] = { level, btn };
+    upRows[key] = { level, buy };
   }
   const carRow = el('div', 'row');
   const carLabel = el('span', 'label');
-  const carBtn = el('button', 'buy');
-  carBtn.type = 'button';
-  carBtn.addEventListener('click', () => handlers.onBuyCar());
-  carRow.append(carLabel, carBtn);
+  const carBuy = createBuyButton(() => handlers.onBuyCar());
+  carRow.append(carLabel, carBuy.btn);
   upBox.append(carRow);
 
   // Circuits.
@@ -139,29 +155,25 @@ export function createUI(root, handlers) {
     }
 
     for (const key of Object.keys(UPGRADES)) {
-      const { level, btn } = upRows[key];
+      const { level, buy } = upRows[key];
       setText(level, 'Niv. ' + profile.levels[key]);
       const cost = upgradeCost(profile, key);
-      const ok = profile.money >= cost;
-      setText(btn, ok ? formatMoney(cost) + ' $' : NO_MONEY);
-      btn.disabled = !ok;
-      btn.classList.toggle('ok', ok);
+      setBuy(buy, formatMoney(cost) + ' $', profile.money >= cost, NO_MONEY);
     }
 
     setText(carLabel, 'Nouvelle voiture (' + profile.cars + '/' + MAX_CARS + ')');
     const full = profile.cars >= MAX_CARS;
     const cCost = carCost(profile);
     const carOk = !full && profile.money >= cCost;
-    setText(carBtn, full ? 'Écurie complète' : carOk ? formatMoney(cCost) + ' $' : NO_MONEY);
-    carBtn.disabled = !carOk;
-    carBtn.classList.toggle('ok', carOk);
+    setBuy(carBuy, full ? '—' : formatMoney(cCost) + ' $', carOk, full ? TEAM_FULL : NO_MONEY);
 
     TRACKS.forEach((track, i) => {
       const { btn, req } = trackRows[i];
       const unlocked = profile.reputation >= track.repRequired;
       btn.disabled = !unlocked;
       btn.classList.toggle('selected', i === profile.trackIndex);
-      setText(req, unlocked ? '' : 'Réputation ' + track.repRequired + ' requise');
+      const next = unlocked && i === profile.trackIndex && i !== trackIndex;
+      setText(req, unlocked ? (next ? 'prochaine course' : '') : 'Réputation ' + track.repRequired + ' requise');
     });
   }
 
