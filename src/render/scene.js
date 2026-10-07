@@ -9,7 +9,7 @@ const SKID_LIFE = 8;
 const SKID_MIN_SPEED = 120;
 const SKID_GRIP_RATIO = 0.85;
 
-const PARTICLE_MAX = 240;
+const PARTICLE_MAX = 400;
 const FLAME_PER_FRAME = 3;
 const FLAME_LIFE = 0.35;
 const FLAME_SHADES = 8;
