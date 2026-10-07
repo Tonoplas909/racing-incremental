@@ -1,6 +1,6 @@
 import {
   BASE_CAR, NITRO, UPGRADES, UPGRADE_EFFECT, CAR_COSTS, MAX_CARS,
-  PRIZES, LAP_REWARD, OVERTAKE_REWARD, REPUTATION, TRACKS
+  PRIZES, LAP_REWARD, OVERTAKE_REWARD, REPUTATION, TRACKS, RIVAL_BASE, RIVAL_GROWTH
 } from './config.js';
 
 export function createProfile() {
@@ -67,13 +67,10 @@ export function nitroStats(profile) {
 }
 
 export function rivalParams(trackIndex, skill) {
-  const multiplier = (0.92 + 0.1 * trackIndex) * skill;
-  return {
-    topSpeed: BASE_CAR.topSpeed * multiplier,
-    accel: BASE_CAR.accel * multiplier,
-    brake: BASE_CAR.brake * multiplier,
-    grip: BASE_CAR.grip * multiplier
-  };
+  const multiplier = RIVAL_BASE * Math.pow(RIVAL_GROWTH, trackIndex) * skill;
+  const result = {};
+  for (const key of Object.keys(BASE_CAR)) result[key] = BASE_CAR[key] * multiplier;
+  return result;
 }
 
 export function lapReward(trackIndex) {
@@ -118,7 +115,7 @@ export function settleRace(profile, carIds, ownIds, trackIndex) {
 
   // Get reputation from best position
   const reputationGain = bestOwnPosition > 0 && bestOwnPosition <= REPUTATION.length
-    ? REPUTATION[bestOwnPosition - 1]
+    ? REPUTATION[bestOwnPosition - 1] * (trackIndex + 1)
     : 0;
 
   // Update stats

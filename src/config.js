@@ -19,6 +19,8 @@ export const PRIZES = [120, 80, 60, 40, 30, 20, 15, 10, 10];
 export const LAP_REWARD = 5;
 export const OVERTAKE_REWARD = 3;
 export const REPUTATION = [5, 3, 2, 1];
+export const RIVAL_BASE = 0.98;
+export const RIVAL_GROWTH = 1.25;
 export const PLAYER_TEAM = { id: 'player', name: 'Ton écurie', color: '#ff8c1a' };
 export const RIVALS = [
   { id: 'rouge',    name: 'Bolide Rouge', color: '#e63946', skill: 1.0 },

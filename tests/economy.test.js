@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BASE_CAR } from '../src/config.js';
+import { BASE_CAR, RIVAL_BASE, RIVAL_GROWTH } from '../src/config.js';
 import {
   createProfile, upgradeCost, carCost, buyUpgrade, buyCar,
   playerParams, nitroStats, rivalParams, lapReward, overtakeReward,
@@ -33,7 +33,8 @@ test('params', () => {
   assert.ok(Math.abs(playerParams(p).topSpeed - 275.6) < 1e-9 && Math.abs(playerParams(p).accel - 151.2) < 1e-9);
   assert.deepEqual(nitroStats(createProfile()), { duration: 1.5, cooldown: 8 });
   const r = rivalParams(4, 0.9);
-  assert.ok(Math.abs(r.topSpeed - 260 * 1.32 * 0.9) < 1e-9);
+  assert.ok(Math.abs(r.topSpeed - 260 * RIVAL_BASE * Math.pow(RIVAL_GROWTH, 4) * 0.9) < 1e-9);
+  assert.deepEqual(Object.keys(r), Object.keys(BASE_CAR));
 });
 
 test('rewards', () => {
@@ -49,6 +50,10 @@ test('settleRace', () => {
   assert.deepEqual(settleRace(q, ['me1', 'r1', 'me2'], ['me1', 'me2'], 0), { prize: 180, reputation: 5, unlocked: 1 });
   assert.equal(q.trackIndex, 1); assert.equal(q.stats.wins, 1); assert.equal(unlockedCount(q), 2);
   const r = createProfile();
-  assert.deepEqual(settleRace(r, ['r1', 'me1'], ['me1'], 1), { prize: 200, reputation: 3, unlocked: null });
+  assert.deepEqual(settleRace(r, ['r1', 'me1'], ['me1'], 1), { prize: 200, reputation: 6, unlocked: null });
   assert.equal(r.money, 200);
+});
+
+test('reputation scales with the circuit', () => {
+  assert.equal(settleRace(createProfile(), ['me1'], ['me1'], 2).reputation, 15);
 });

@@ -19,7 +19,7 @@ Boucle :
 - 5 circuits, chacun défini par une liste de points de contrôle reliés par une spline fermée lisse ; largeur de piste 70 unités.
 - Débloqués par la réputation : 0, 15, 45, 110, 250.
 - Chaque circuit a un multiplicateur de récompense : ×1, ×2,5, ×6, ×15, ×40.
-- Les rivaux sont plus forts sur les circuits avancés : performance ×(0,92 + 0,1 × rang du circuit), modulée par un niveau propre à chaque écurie.
+- Les rivaux sont plus forts sur les circuits avancés : performance ×(0,98 × 1,25^rang du circuit), modulée par un niveau propre à chaque écurie.
 - Le joueur choisit son circuit parmi ceux débloqués ; un nouveau circuit débloqué est sélectionné automatiquement pour la course suivante.
 
 ## 3. Course et pilotage
@@ -35,7 +35,7 @@ Boucle :
 - Tour bouclé : 5 $ × multiplicateur du circuit, par voiture du joueur.
 - Dépassement : 3 $ × multiplicateur, uniquement quand la voiture atteint une place jamais atteinte depuis le départ (pas de farm en se faisant redoubler).
 - Prime de fin : 120, 80, 60, 40, 30, 20, 15, 10, 10 $ selon la position × multiplicateur.
-- Réputation : 5 / 3 / 2 / 1 pour une meilleure place de 1 / 2 / 3 / 4.
+- Réputation : (5 / 3 / 2 / 1 pour une meilleure place de 1 / 2 / 3 / 4) × (rang du circuit + 1), rang compté à partir de 0.
 - Améliorations (coût = base × croissance^niveau) :
   - Moteur (50, ×1,6) : vitesse de pointe ×1,06 et accélération ×1,08 par niveau
   - Pneus (50, ×1,6) : adhérence ×1,07 par niveau
