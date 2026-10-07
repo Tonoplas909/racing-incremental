@@ -1,4 +1,4 @@
-import { WORLD, TRACKS, RIVALS, AUTOSAVE_MS } from './config.js';
+import { TRACKS, RIVALS, AUTOSAVE_MS, TRACK_WIDTH } from './config.js';
 import { formatMoney } from './format.js';
 import { buildTrack, pointAt } from './track.js';
 import { createRace, stepRace, tryNitro, standings } from './race.js';
@@ -44,6 +44,7 @@ let order = [];
 let view = null;
 let dpr = 1;
 let bg = null;
+let bounds = null;
 let endTimer = null;
 
 const ui = createUI(document.getElementById('panel'), {
@@ -79,8 +80,33 @@ function refreshUI() {
   ui.update({ profile, race, ownIds, standings: order, trackIndex: raceTrackIndex });
 }
 
+// World rectangle to frame: the centerline bounding box plus the track width and a margin.
+function trackBounds(track) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (let i = 0; i < track.count; i++) {
+    const x = track.xs[i], y = track.ys[i];
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+  const pad = TRACK_WIDTH + 40;
+  return { x: minX - pad, y: minY - pad, width: maxX - minX + 2 * pad, height: maxY - minY + 2 * pad };
+}
+
 function rebuildBackground() {
-  bg = view && race ? renderBackground(race.track, view, dpr) : null;
+  bg = view && race ? renderBackground(race.track, view, dpr, stage.clientWidth, stage.clientHeight) : null;
+}
+
+function updateView() {
+  const w = stage.clientWidth;
+  const h = stage.clientHeight;
+  if (w === 0 || h === 0 || !bounds) return false;
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.round(w * dpr));
+  canvas.height = Math.max(1, Math.round(h * dpr));
+  view = fitView(w, h, bounds);
+  return true;
 }
 
 function startRace() {
@@ -110,18 +136,14 @@ function startRace() {
   race = createRace(buildTrack(TRACKS[raceTrackIndex]), entrants);
   order = standings(race);
   endTimer = null;
+  bounds = trackBounds(race.track);
+  updateView();
   rebuildBackground();
   refreshUI();
 }
 
 function resize() {
-  const w = stage.clientWidth;
-  const h = stage.clientHeight;
-  if (w === 0 || h === 0) return;
-  dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.max(1, Math.round(w * dpr));
-  canvas.height = Math.max(1, Math.round(h * dpr));
-  view = fitView(w, h, WORLD);
+  if (!updateView()) return;
   rebuildBackground();
 }
 
@@ -144,7 +166,7 @@ function handleEvents(events) {
     } else if (ev.type === 'raceEnd') {
       const result = settleRace(profile, ev.results, ownIds, raceTrackIndex);
       if (result.prize > 0) {
-        scene.addFloat(WORLD.width / 2, WORLD.height / 2, 'Prix +' + formatMoney(result.prize) + ' $', '#37e873');
+        scene.addFloat(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, 'Prix +' + formatMoney(result.prize) + ' $', '#37e873');
       }
       endTimer = RACE_END_DELAY;
       persist();

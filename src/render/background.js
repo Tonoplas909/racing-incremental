@@ -1,4 +1,4 @@
-import { WORLD, TRACK_WIDTH, RACE, CAR_LENGTH, CAR_WIDTH } from '../config.js';
+import { TRACK_WIDTH, RACE, CAR_LENGTH, CAR_WIDTH } from '../config.js';
 import { pointAt } from '../track.js';
 
 const KERB_CURV = 1 / 220;
@@ -21,16 +21,17 @@ function mulberry32(seed) {
   };
 }
 
-function drawGrass(ctx) {
+// visible = { x, y, width, height }: the world rectangle covered by the canvas.
+function drawGrass(ctx, visible) {
   ctx.fillStyle = '#4a8a3c';
-  ctx.fillRect(0, 0, WORLD.width, WORLD.height);
+  ctx.fillRect(visible.x, visible.y, visible.width, visible.height);
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, 0, WORLD.width, WORLD.height);
+  ctx.rect(visible.x, visible.y, visible.width, visible.height);
   ctx.clip();
-  ctx.translate(WORLD.width / 2, WORLD.height / 2);
+  ctx.translate(visible.x + visible.width / 2, visible.y + visible.height / 2);
   ctx.rotate(STRIPE_ANGLE);
-  const reach = Math.hypot(WORLD.width, WORLD.height) / 2;
+  const reach = Math.hypot(visible.width, visible.height) / 2;
   ctx.fillStyle = '#4f913f';
   for (let x = -reach; x < reach; x += STRIPE_WIDTH * 2) {
     ctx.fillRect(x, -reach, STRIPE_WIDTH, reach * 2);
@@ -38,7 +39,7 @@ function drawGrass(ctx) {
   ctx.restore();
 }
 
-function drawTrees(ctx, track) {
+function drawTrees(ctx, track, visible) {
   const seed = [...track.def.id].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
   const rand = mulberry32(seed);
   const minDist2 = TRACK_WIDTH * TRACK_WIDTH;
@@ -46,8 +47,8 @@ function drawTrees(ctx, track) {
   let placed = 0;
   for (let attempt = 0; attempt < TREE_ATTEMPTS && placed < TREE_COUNT; attempt++) {
     const r = 14 + rand() * 10;
-    const x = r + rand() * (WORLD.width - 2 * r);
-    const y = r + rand() * (WORLD.height - 2 * r);
+    const x = visible.x + r + rand() * (visible.width - 2 * r);
+    const y = visible.y + r + rand() * (visible.height - 2 * r);
     let clear = true;
     for (let i = 0; i < count; i++) {
       const dx = xs[i] - x, dy = ys[i] - y;
@@ -155,21 +156,19 @@ function drawGridBoxes(ctx, track) {
   }
 }
 
-export function renderBackground(track, view, dpr) {
-  // The view is centered, so the CSS size follows from the world size, scale and offsets.
-  const cssWidth = WORLD.width * view.scale + 2 * view.offsetX;
-  const cssHeight = WORLD.height * view.scale + 2 * view.offsetY;
+export function renderBackground(track, view, dpr, cssWidth, cssHeight) {
   const canvas = document.createElement('canvas');
   canvas.width = Math.max(1, Math.round(cssWidth * dpr));
   canvas.height = Math.max(1, Math.round(cssHeight * dpr));
   const ctx = canvas.getContext('2d');
 
-  ctx.fillStyle = '#2f5e2b';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   ctx.setTransform(dpr * view.scale, 0, 0, dpr * view.scale, dpr * view.offsetX, dpr * view.offsetY);
-  drawGrass(ctx);
-  drawTrees(ctx, track);
+  // World rectangle covered by the whole canvas, from its corners through the view.
+  const x0 = -view.offsetX / view.scale;
+  const y0 = -view.offsetY / view.scale;
+  const visible = { x: x0, y: y0, width: cssWidth / view.scale, height: cssHeight / view.scale };
+  drawGrass(ctx, visible);
+  drawTrees(ctx, track, visible);
   drawAsphalt(ctx, track);
   drawKerbs(ctx, track);
   drawFinishLine(ctx, track);

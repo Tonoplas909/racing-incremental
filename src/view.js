@@ -1,9 +1,10 @@
-export function fitView(cssWidth, cssHeight, world) {
-  const scale = Math.min(cssWidth / world.width, cssHeight / world.height);
+// bounds = { x, y, width, height }: the world rectangle to frame, fitted and centered.
+export function fitView(cssWidth, cssHeight, bounds) {
+  const scale = Math.min(cssWidth / bounds.width, cssHeight / bounds.height);
   return {
     scale,
-    offsetX: (cssWidth - world.width * scale) / 2,
-    offsetY: (cssHeight - world.height * scale) / 2,
+    offsetX: (cssWidth - bounds.width * scale) / 2 - bounds.x * scale,
+    offsetY: (cssHeight - bounds.height * scale) / 2 - bounds.y * scale,
   };
 }
 
